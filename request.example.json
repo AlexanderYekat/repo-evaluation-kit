@@ -1,0 +1,7 @@
+{
+  "goal": "Хочу локальный инструмент проверки оформления файлов с учётом ignore-правил и .editorconfig. Не хочу писать оба движка с нуля. Проверяемые файлы изменять нельзя.",
+  "repositories": [
+    "https://github.com/cpburnz/python-pathspec",
+    "https://github.com/editorconfig/editorconfig-core-py"
+  ]
+}

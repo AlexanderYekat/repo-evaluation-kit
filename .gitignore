@@ -1,6 +1,7 @@
-# Immutable historical sample and local evaluations are not kit distribution.
+# Local user materials and research results.
 /1c-migration-audit/
 /evaluations/
+/request.json
 **/_sources/
 **/source-checkouts/
 **/.venv/
@@ -9,7 +10,6 @@
 *.py[cod]
 .pytest_cache/
 /tests/.tmp/
-/sample-baseline.tmp.json
 *.tmp
 .env
 .env.*

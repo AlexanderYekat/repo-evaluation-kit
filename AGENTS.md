@@ -1,6 +1,7 @@
 # Работа с repo-evaluation-kit
 
-Это комплект методики, переносимого skill и проверок, не приложение.
+Для пользовательского запуска следуй README: цель и ссылки поступают из сообщения
+или request.json. Исследование выполняй в отдельном каталоге evaluations/.
 Для исследования кандидатов используй [repo-evaluation](.agents/skills/repo-evaluation/SKILL.md).
 Единый источник содержательных правил — его `references/methodology.md`;
 форматы и механика — `references/formats.md`.

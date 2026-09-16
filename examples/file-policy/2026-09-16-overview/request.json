@@ -1,7 +1,0 @@
-{
-  "goal": "Подготовить локальную проверку файлов проекта: учитывать заданные ignore-правила, определять правила оформления из .editorconfig и выдавать отчёт о нарушениях без изменения файлов. Не писать оба движка правил с нуля.",
-  "repositories": [
-    "https://github.com/cpburnz/python-pathspec",
-    "https://github.com/editorconfig/editorconfig-core-py"
-  ]
-}
