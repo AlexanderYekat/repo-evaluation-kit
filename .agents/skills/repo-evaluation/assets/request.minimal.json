@@ -1,0 +1,4 @@
+{
+  "goal": "Выбрать компоненты для личной базы заметок с поиском и переносимым хранением.",
+  "repositories": ["https://github.com/example/candidate-a", "https://github.com/example/candidate-b"]
+}

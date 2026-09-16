@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "input_count": 2,
+  "repositories": [
+    {
+      "id": "r01",
+      "input_index": 1,
+      "input_url": "https://github.com/cpburnz/python-pathspec",
+      "canonical_url": "https://github.com/cpburnz/python-pathspec",
+      "access": "AVAILABLE",
+      "access_reason": "2026-09-16: GitHub API вернул метаданные, commit и закреплённые текстовые файлы.",
+      "default_branch": "master",
+      "commit": "f0fb3f4aaaca490d7667e4dc1d565d52a25158b0",
+      "commit_source": "https://api.github.com/repos/cpburnz/python-pathspec/commits/master",
+      "origin": {
+        "kind": "ORIGINAL",
+        "upstream_url": null,
+        "comparison": "NOT_APPLICABLE"
+      },
+      "project_type": "Библиотека Python",
+      "roles": [
+        "Сопоставление путей с ignore-правилами"
+      ],
+      "priority": "HIGH",
+      "scope": "OVERVIEW",
+      "duplicate_of": null,
+      "report": "reports/r01.md"
+    },
+    {
+      "id": "r02",
+      "input_index": 2,
+      "input_url": "https://github.com/editorconfig/editorconfig-core-py",
+      "canonical_url": "https://github.com/editorconfig/editorconfig-core-py",
+      "access": "AVAILABLE",
+      "access_reason": "2026-09-16: GitHub API вернул метаданные, commit и закреплённые текстовые файлы.",
+      "default_branch": "master",
+      "commit": "e1298e0b8c66041f2e32e84d7c7bbe99ffdba339",
+      "commit_source": "https://api.github.com/repos/editorconfig/editorconfig-core-py/commits/master",
+      "origin": {
+        "kind": "ORIGINAL",
+        "upstream_url": null,
+        "comparison": "NOT_APPLICABLE"
+      },
+      "project_type": "Библиотека Python; также CLI для получения свойств",
+      "roles": [
+        "Определение правил оформления для заданного пути"
+      ],
+      "priority": "HIGH",
+      "scope": "OVERVIEW",
+      "duplicate_of": null,
+      "report": "reports/r02.md"
+    }
+  ]
+}

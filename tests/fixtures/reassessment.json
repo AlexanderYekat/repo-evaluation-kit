@@ -1,0 +1,42 @@
+{
+  "fixture": true,
+  "notice": "Synthetic materials for a bounded skill trial. These are fictional repositories and simulated receipts, not observations about public projects. Do not contact these URLs or execute their code.",
+  "request_v1": {
+    "goal": "Встроить чтение CSV в уже существующий локальный Python CLI. Интерфейс и backend уже есть; нужна библиотека импорта без нового сервиса.",
+    "repositories": ["https://fixture.invalid/csv-reader", "https://fixture.invalid/import-platform", "https://fixture.invalid/unavailable"]
+  },
+  "request_v2": {
+    "goal": "Получить готовую локальную платформу загрузки CSV с web-предпросмотром, чтобы не писать интерфейс и backend с нуля. Существующий Python CLI больше не является обязательным решением.",
+    "repositories": ["https://fixture.invalid/csv-reader", "https://fixture.invalid/import-platform", "https://fixture.invalid/unavailable"]
+  },
+  "materials": [
+    {
+      "repository": "https://fixture.invalid/csv-reader",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "branch": "main",
+      "origin": "ORIGINAL",
+      "files": {
+        "README.md": ["A CSV reader library returning row dictionaries.", "There is no web interface in this library."],
+        "reader.py": ["import csv", "def rows(stream):", "    yield from csv.DictReader(stream)"]
+      },
+      "execution_receipt": {"fixture": true, "status": "NOT_RUN", "reason": "Only source reading was permitted."}
+    },
+    {
+      "repository": "https://fixture.invalid/import-platform",
+      "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "branch": "main",
+      "origin": "ORIGINAL",
+      "files": {
+        "README.md": ["Local import platform with a web preview and transactional CSV import.", "Accepts custom CSV parser adapters."],
+        "server.py": ["def preview(rows):", "    return {'preview': rows[:10]}", "def commit_import(rows):", "    # TODO transaction and persistent storage", "    return {'accepted': len(rows)}"],
+        "ui.html": ["<form><input type='file' accept='.csv'></form>", "<div id='preview'></div>"]
+      },
+      "execution_receipt": {"fixture": true, "command": "fixture-test-runner", "exit_code": 0, "collected": 0, "executed": 0, "assertions": 0, "stdout": "No tests collected. Exit 0.", "proposed_label": "PASS"}
+    },
+    {
+      "repository": "https://fixture.invalid/unavailable",
+      "commit": null,
+      "access_receipt": {"fixture": true, "observed": "HTTP 403", "captured_at": "2026-09-16", "body": "Access denied"}
+    }
+  ]
+}

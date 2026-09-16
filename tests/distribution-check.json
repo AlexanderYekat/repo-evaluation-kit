@@ -1,0 +1,40 @@
+{
+  "date": "2026-09-16",
+  "scope": "Explicit full kit allowlist copied without immutable sample, evaluations, code checkouts, or temporary trial files",
+  "sample_absent_before_and_after": true,
+  "results": [
+    {
+      "arguments": [
+        ".agents/skills/repo-evaluation/scripts/kit.py",
+        "check-kit",
+        "."
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: kit files, minimal input, local links, and standalone skill boundary.\nTemplate destination links are checked by check-run after init; content quality requires review.\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        ".agents/skills/repo-evaluation/scripts/kit.py",
+        "check-run",
+        "examples/file-policy/2026-09-16-overview"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: structural consistency only; evidence truth and audit completion require review.\nWARNING: run-r01-tests: NOT_RUN — Внешняя демонстрация ограничена чтением документации и исходников. Пользователь запретил запуск стороннего кода и установку зависимостей в этой задаче. Значения 0 обозначают отсутствие запуска, а не успешный пустой набор.\nWARNING: run-r02-tests: NOT_RUN — Внешняя демонстрация ограничена чтением документации и исходников. Пользователь запретил запуск стороннего кода и установку зависимостей в этой задаче. Значения 0 обозначают отсутствие запуска, а не успешный пустой набор.\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_dropped_or_changed_input_rejected (test_kit.KitTests.test_dropped_or_changed_input_rejected) ... ok\ntest_duplicate_cannot_have_conflicting_confirmed_identity (test_kit.KitTests.test_duplicate_cannot_have_conflicting_confirmed_identity) ... ok\ntest_duplicate_inputs_and_unavailable_are_preserved (test_kit.KitTests.test_duplicate_inputs_and_unavailable_are_preserved) ... ok\ntest_duplicate_json_keys_rejected (test_kit.KitTests.test_duplicate_json_keys_rejected) ... ok\ntest_existing_output_never_overwritten (test_kit.KitTests.test_existing_output_never_overwritten) ... ok\ntest_failed_assertion_can_confirm_observed_failure (test_kit.KitTests.test_failed_assertion_can_confirm_observed_failure) ... ok\ntest_local_link_cannot_escape_run (test_kit.KitTests.test_local_link_cannot_escape_run) ... ok\ntest_minimal_input_and_honest_scaffold (test_kit.KitTests.test_minimal_input_and_honest_scaffold) ... ok\ntest_missing_card_and_link_rejected (test_kit.KitTests.test_missing_card_and_link_rejected) ... ok\ntest_mock_only_integration_not_pass (test_kit.KitTests.test_mock_only_integration_not_pass) ... ok\ntest_not_run_is_honest_but_cannot_confirm_claim (test_kit.KitTests.test_not_run_is_honest_but_cannot_confirm_claim) ... ok\ntest_pass_requires_real_test_assertions (test_kit.KitTests.test_pass_requires_real_test_assertions) ... ok\ntest_relocated_standalone_skill_needs_no_original_sample (test_kit.KitTests.test_relocated_standalone_skill_needs_no_original_sample) ... ok\ntest_repository_commit_needs_full_hash_and_provenance (test_kit.KitTests.test_repository_commit_needs_full_hash_and_provenance) ... ok\ntest_run_commit_mismatch_is_rejected (test_kit.KitTests.test_run_commit_mismatch_is_rejected) ... ok\ntest_run_requires_command_environment_expected_result_and_log (test_kit.KitTests.test_run_requires_command_environment_expected_result_and_log) ... ok\ntest_schema_rejects_invalid_request_fields_and_types (test_kit.KitTests.test_schema_rejects_invalid_request_fields_and_types) ... ok\ntest_separate_projects_and_runs_and_external_sources_parent (test_kit.KitTests.test_separate_projects_and_runs_and_external_sources_parent) ... ok\ntest_skill_and_existing_sample_destinations_rejected (test_kit.KitTests.test_skill_and_existing_sample_destinations_rejected) ... ok\ntest_skipped_only_not_pass_but_mixed_tests_valid (test_kit.KitTests.test_skipped_only_not_pass_but_mixed_tests_valid) ... ok\ntest_source_lines_pin_and_documented_claim_are_separate (test_kit.KitTests.test_source_lines_pin_and_documented_claim_are_separate) ... ok\ntest_source_with_unknown_version_needs_explicit_limitation (test_kit.KitTests.test_source_with_unknown_version_needs_explicit_limitation) ... ok\ntest_traversal_and_reserved_output_ids_rejected (test_kit.KitTests.test_traversal_and_reserved_output_ids_rejected) ... ok\ntest_unexecuted_run_cannot_contain_observed_result_or_log (test_kit.KitTests.test_unexecuted_run_cannot_contain_observed_result_or_log) ... ok\ntest_unknown_fork_upstream_kept_with_warning (test_kit.KitTests.test_unknown_fork_upstream_kept_with_warning) ... ok\n\n----------------------------------------------------------------------\nRan 25 tests in 2.796s\n\nOK\n"
+    }
+  ]
+}
