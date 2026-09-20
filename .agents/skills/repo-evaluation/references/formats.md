@@ -79,19 +79,39 @@
 
 ## Команды и ограничения механики
 
-Из каталога комплекта (на Windows можно заменить `python` на `py -3`):
+Из каталога комплекта (в Windows достаточно `.\new-project.cmd имя-проекта`;
+вместо `python` можно `py -3`):
 
 ```text
+.\new-project.cmd notes-search
+python .agents/skills/repo-evaluation/scripts/kit.py new-project notes-search
+python .agents/skills/repo-evaluation/scripts/kit.py new-project notes-search --parent D:/Projects
 python .agents/skills/repo-evaluation/scripts/kit.py validate-request request.json
 python .agents/skills/repo-evaluation/scripts/kit.py init --request request.json --project notes --run first
 python .agents/skills/repo-evaluation/scripts/kit.py init --request request.json --output /allowed/location/new-run
 python .agents/skills/repo-evaluation/scripts/kit.py check-run evaluations/notes/first
 python .agents/skills/repo-evaluation/scripts/kit.py check-kit .
+python .agents/skills/repo-evaluation/scripts/kit.py new-project --output /allowed/location/research-project
+python .agents/skills/repo-evaluation/scripts/kit.py new-project --output . --adopt --reset-git
 ```
 
 Без `--output` назначение — `evaluations/<project-id>/<run-id>` относительно текущего каталога; `project_id` берётся из `--project`, входа или `project`, run-id из `--run` или UTC timestamp. `--output` нельзя совмещать с `--project`/`--run`. Имя проекта для отображения берётся из контекста; `project_name` не используется для построения путей.
 
 `init` всегда отказывается от существующего назначения и дерева самого skill; в checkout комплекта также защищены существующие каталоги образца, исходников и шаблонов. Обычные имена внешних каталогов вроде `sources` сами по себе не запрещены. Он не загружает репозитории, не запускает команды из них, не ставит зависимости и не заполняет содержательные выводы. Процесс соблюдает права ОС/среды; внешний каталог допустим только в пределах разрешений. Ошибка записи оставляет незавершённое новое назначение для осмотра, автоматического удаления нет.
+
+`new-project` (то же, что `new-workspace`) создаёт отдельный проект исследования:
+достаточно имени папки. По умолчанию это `C:\MyProjects\<имя>` в Windows, иначе
+`~/MyProjects/<имя>`; каталог создаётся при необходимости. Другой корень: `--parent`
+или переменная `REPO_EVALUATION_PROJECTS_DIR`. `--output` задаёт полный путь и не
+совмещается с именем. Цель и ссылки на этом шаге не требуются. Копируются skill,
+промпты комплекта если они рядом, рабочий README/AGENTS, gitignore, в котором
+`evaluations/` версионируется, а checkout'ы кандидатов нет, и пустой `git init` без
+commit и remote. Не копирует `.git`, `tests/` и результаты комплекта. Назначение не
+должно существовать и не может лежать внутри skill. `--adopt` переводит уже
+скопированную папку комплекта: всегда обновляет `.gitignore`, при первом переводе
+пишет README/AGENTS и `workspace.json`, не трогает уже начатые `evaluations/`.
+`--reset-git` удаляет `.git` и делает новый `git init`; для каталога
+`repo-evaluation-kit` нужен `--force`. Commit не создаётся.
 
 `check-run` проверяет количество и порядок входов, карточки, допустимые поля и статусы, совпадение commits, ссылки между реестрами, обязательные данные запуска и существование локальных Markdown-ссылок. Исходники в `sources/` не исполняются и не проверяются как документы комплекта. `check-kit` проверяет переносимую границу skill, минимальный вход и локальные ссылки, пропуская неизменяемый образец, результаты в `evaluations/`, кеши и скачанные исходники. Ссылки шаблонов на будущие файлы проверяются после `init` через `check-run`. Якоря разделов Markdown и удалённые URL механически не проверяются.
 

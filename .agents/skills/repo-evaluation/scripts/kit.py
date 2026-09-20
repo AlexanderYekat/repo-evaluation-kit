@@ -4,7 +4,10 @@
 import argparse
 import datetime as dt
 import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -15,6 +18,8 @@ DOCUMENTS = ("BRIEF.md", "CAPABILITY-MAP.md", "REPORT.md", "VALIDATION.md", "STA
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$")
 SHA = re.compile(r"^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$")
 EXCLUDED = {"1c-migration-audit", "evaluations", "cache", "_sources", ".git", ".tmp", "__pycache__", "node_modules", ".venv"}
+WORKSPACE_DOCS = ((".gitignore", "workspace.gitignore"), ("README.md", "WORKSPACE.md"), ("AGENTS.md", "WORKSPACE-AGENTS.md"))
+PROTECTED_WORKSPACE_NAMES = {"repo-evaluation-kit"}
 
 
 class Invalid(ValueError):
@@ -159,6 +164,100 @@ def initialize(args):
     save_json(destination / "EVIDENCE.json", evidence)
     (destination / "sources" / "README.md").write_text("# Источники\n\nСохраняйте разрешённые выдержки и метаданные; связывайте их с EVIDENCE.json. Источники ещё не собраны.\n", encoding="utf-8")
     print(f"Created {destination}\nScaffold only: no repository has been researched or executed.")
+
+
+def layout_root():
+    if SKILL.parent.name == "skills" and SKILL.parent.parent.name == ".agents":
+        return SKILL.parents[2]
+    return None
+
+
+def remove_tree(path):
+    def handle(func, item, _):
+        Path(item).chmod(0o700)
+        func(item)
+    shutil.rmtree(path, onerror=handle)
+
+
+def git_init(destination):
+    git = shutil.which("git")
+    require(git is not None, "git is required to create a workspace repository")
+    result = subprocess.run([git, "init"], cwd=destination, capture_output=True, text=True)
+    require(result.returncode == 0, result.stderr.strip() or result.stdout.strip() or "git init failed")
+
+
+def write_workspace_identity(destination):
+    first = not (destination / "workspace.json").is_file()
+    for name, asset in WORKSPACE_DOCS:
+        if name != ".gitignore" and not first:
+            continue
+        require((ASSETS / asset).is_file(), f"missing workspace template: {asset}")
+        shutil.copyfile(ASSETS / asset, destination / name)
+    save_json(destination / "workspace.json", {"kind": "repo-evaluation-workspace", "schema_version": "1.0"})
+
+
+def default_projects_dir():
+    configured = os.environ.get("REPO_EVALUATION_PROJECTS_DIR", "").strip()
+    if configured:
+        return Path(configured)
+    if os.name == "nt":
+        return Path("C:/MyProjects")
+    return Path.home() / "MyProjects"
+
+
+def workspace_destination(args):
+    require(not (args.output and args.name), "project name cannot be combined with --output")
+    require(not (args.output and args.parent), "--parent cannot be combined with --output")
+    if args.output:
+        return Path(args.output).resolve()
+    require(args.name, "project name required")
+    name = safe_id(args.name, "project")
+    parent = Path(args.parent).resolve() if args.parent else default_projects_dir().resolve()
+    parent.mkdir(parents=True, exist_ok=True)
+    return (parent / name).resolve()
+
+
+def new_workspace(args):
+    destination = workspace_destination(args)
+    require(not destination.is_relative_to(SKILL), "output must be outside the skill")
+    if args.adopt:
+        require(destination.is_dir(), f"adopt target does not exist: {destination}")
+        require((destination / ".agents" / "skills" / "repo-evaluation" / "SKILL.md").is_file(), "adopt target is not a kit/workspace checkout")
+        write_workspace_identity(destination)
+        (destination / "evaluations").mkdir(exist_ok=True)
+        if args.reset_git:
+            require(destination.name not in PROTECTED_WORKSPACE_NAMES or args.force, "refusing to replace git in repo-evaluation-kit without --force")
+            git_dir = destination / ".git"
+            if git_dir.exists():
+                remove_tree(git_dir)
+            git_init(destination)
+            git_note = "Git: replaced with a new empty repository, no commits, no remote."
+        elif (destination / ".git").exists():
+            git_note = "Git: history unchanged; pass --reset-git to replace the kit repository."
+        else:
+            git_init(destination)
+            git_note = "Git: new empty repository, no commits, no remote."
+        print(f"Adopted {destination}\n{git_note}\nOpen this folder and write the goal and repository links in chat.")
+        return
+    require(not destination.exists(), f"output already exists: {destination}")
+    require(not args.reset_git and not args.force, "--reset-git and --force apply only to --adopt")
+    for _, asset in WORKSPACE_DOCS:
+        require((ASSETS / asset).is_file(), f"missing workspace template: {asset}")
+    destination.mkdir(parents=True, exist_ok=False)
+    shutil.copytree(SKILL, destination / ".agents" / "skills" / "repo-evaluation", ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".git"))
+    root = layout_root()
+    if root is not None:
+        if (root / "prompts").is_dir():
+            shutil.copytree(root / "prompts", destination / "prompts", ignore=shutil.ignore_patterns("__pycache__"))
+        if (root / "request.example.json").is_file():
+            shutil.copyfile(root / "request.example.json", destination / "request.example.json")
+    if not (destination / "request.example.json").is_file():
+        shutil.copyfile(ASSETS / "request.minimal.json", destination / "request.example.json")
+    write_workspace_identity(destination)
+    (destination / "evaluations").mkdir()
+    (destination / "evaluations" / ".gitkeep").write_text("", encoding="utf-8")
+    git_init(destination)
+    print(f"Created {destination}\nOpen this folder and write the goal and repository links in chat.")
 
 
 def fields(record, required, label):
@@ -382,7 +481,7 @@ def check_run(path):
 def check_kit(path):
     root = Path(path).resolve()
     skill = root if (root / "SKILL.md").is_file() else root / ".agents" / "skills" / "repo-evaluation"
-    for name in ["SKILL.md", "references/formats.md", "scripts/kit.py", "assets/request.schema.json", "assets/request.minimal.json", "assets/INVENTORY.json", "assets/EVIDENCE.json", *(f"assets/{name}" for name in [*DOCUMENTS, "REPOSITORY.md"])]:
+    for name in ["SKILL.md", "references/formats.md", "scripts/kit.py", "assets/request.schema.json", "assets/request.minimal.json", "assets/INVENTORY.json", "assets/EVIDENCE.json", *(f"assets/{name}" for name in [*DOCUMENTS, "REPOSITORY.md"]), "assets/workspace.gitignore", "assets/WORKSPACE.md", "assets/WORKSPACE-AGENTS.md"]:
         require((skill / name).is_file(), f"missing skill file: {name}")
     content = (skill / "SKILL.md").read_text(encoding="utf-8-sig")
     require(content.startswith("---\n") and re.search(r"(?m)^name:\s*repo-evaluation\s*$", content) and re.search(r"(?m)^description:\s*\S", content), "SKILL.md needs YAML name/description")
@@ -405,6 +504,13 @@ def main(argv=None):
     initialize_parser.add_argument("--output")
     initialize_parser.add_argument("--project")
     initialize_parser.add_argument("--run")
+    workspace_parser = commands.add_parser("new-project", aliases=["new-workspace"])
+    workspace_parser.add_argument("name", nargs="?", help="project folder name under the projects directory")
+    workspace_parser.add_argument("--output", help="full path; do not combine with a project name")
+    workspace_parser.add_argument("--parent", help="parent directory; default C:\\MyProjects on Windows")
+    workspace_parser.add_argument("--adopt", action="store_true")
+    workspace_parser.add_argument("--reset-git", action="store_true")
+    workspace_parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.command == "validate-request":
@@ -414,6 +520,8 @@ def main(argv=None):
             initialize(args)
         elif args.command == "check-run":
             check_run(args.path)
+        elif args.command in {"new-project", "new-workspace"}:
+            new_workspace(args)
         else:
             check_kit(args.path)
     except (Invalid, OSError, ValueError, TypeError, KeyError) as error:

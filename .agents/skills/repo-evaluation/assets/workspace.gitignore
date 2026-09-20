@@ -1,0 +1,14 @@
+# Candidate checkouts, caches, and secrets. Research files in evaluations/ are tracked.
+**/_sources/
+**/source-checkouts/
+evaluations/**/sources/
+**/.venv/
+**/node_modules/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+*.tmp
+.env
+.env.*
+*.key
+*.pem

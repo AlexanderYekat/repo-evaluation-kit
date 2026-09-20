@@ -330,6 +330,117 @@ class KitTests(unittest.TestCase):
                                     encoding="utf-8", errors="replace", capture_output=True, check=False)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def git(self, cwd, *arguments):
+        result = subprocess.run(["git", *arguments], cwd=cwd, text=True, encoding="utf-8",
+                                errors="replace", capture_output=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return result
+
+    def assert_workspace(self, path):
+        gitignore = (path / ".gitignore").read_text(encoding="utf-8")
+        self.assertNotIn("/evaluations/", gitignore)
+        self.assertIn("evaluations/**/sources/", gitignore)
+        self.assertTrue((path / ".agents" / "skills" / "repo-evaluation" / "SKILL.md").is_file())
+        self.assertTrue((path / "workspace.json").is_file())
+        self.assertEqual(kit.read_json(path / "workspace.json")["kind"], "repo-evaluation-workspace")
+        self.assertFalse((path / "tests").exists())
+        self.assertTrue((path / ".git").is_dir())
+        empty = subprocess.run(["git", "rev-parse", "HEAD"], cwd=path, text=True, encoding="utf-8",
+                               errors="replace", capture_output=True, check=False)
+        self.assertNotEqual(empty.returncode, 0)
+
+    def test_new_workspace_is_research_project_not_kit_clone(self):
+        destination = self.root / "research-project"
+        code, output = self.invoke("new-project", "--output", destination)
+        self.assertEqual(code, 0, output)
+        self.assert_workspace(destination)
+        self.assertTrue((destination / "prompts" / "START-AUDIT.md").is_file())
+        self.assertTrue((destination / "request.example.json").is_file())
+        self.assertTrue((destination / "evaluations" / ".gitkeep").is_file())
+        self.assertEqual(self.invoke("check-kit", destination)[0], 0)
+        sentinel = destination / "keep.txt"
+        sentinel.write_text("user", encoding="utf-8")
+        code, output = self.invoke("new-workspace", "--output", destination)
+        self.assertEqual(code, 1, output)
+        self.assertIn("already exists", output)
+        self.assertEqual(sentinel.read_text(encoding="utf-8"), "user")
+
+    def test_project_name_creates_under_parent(self):
+        parent = self.root / "MyProjects"
+        code, output = self.invoke("new-project", "alpha", "--parent", parent)
+        self.assertEqual(code, 0, output)
+        self.assert_workspace(parent / "alpha")
+        self.assertIn("Open this folder", output)
+        code, output = self.invoke("new-project")
+        self.assertEqual(code, 1, output)
+        self.assertIn("project name required", output)
+        code, output = self.invoke("new-project", "alpha", "--output", self.root / "other")
+        self.assertEqual(code, 1, output)
+        code, output = self.invoke("new-project", "../escape", "--parent", parent)
+        self.assertEqual(code, 1, output)
+
+    def test_default_projects_dir_uses_env_or_myprojects(self):
+        previous = os.environ.pop("REPO_EVALUATION_PROJECTS_DIR", None)
+        try:
+            expected = Path("C:/MyProjects") if os.name == "nt" else Path.home() / "MyProjects"
+            self.assertEqual(kit.default_projects_dir(), expected)
+            os.environ["REPO_EVALUATION_PROJECTS_DIR"] = str(self.root / "from-env")
+            self.assertEqual(kit.default_projects_dir(), self.root / "from-env")
+        finally:
+            if previous is None:
+                os.environ.pop("REPO_EVALUATION_PROJECTS_DIR", None)
+            else:
+                os.environ["REPO_EVALUATION_PROJECTS_DIR"] = previous
+
+    def test_adopt_workspace_replaces_kit_identity_and_optional_git(self):
+        copied = self.root / "copied-kit"
+        shutil.copytree(kit.SKILL, copied / ".agents" / "skills" / "repo-evaluation",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        (copied / ".gitignore").write_text("/evaluations/\n/request.json\n", encoding="utf-8")
+        (copied / "README.md").write_text("kit clone", encoding="utf-8")
+        research = copied / "evaluations" / "main"
+        research.mkdir(parents=True)
+        (research / "STATE.md").write_text("started", encoding="utf-8")
+        self.git(copied, "init")
+        self.git(copied, "config", "user.email", "fixture@example.test")
+        self.git(copied, "config", "user.name", "fixture")
+        self.git(copied, "add", ".gitignore")
+        self.git(copied, "-c", "commit.gpgsign=false", "commit", "-m", "kit history")
+        code, output = self.invoke("new-project", "--output", copied, "--adopt")
+        self.assertEqual(code, 0, output)
+        self.assertIn("history unchanged", output)
+        gitignore = (copied / ".gitignore").read_text(encoding="utf-8")
+        self.assertNotIn("/evaluations/", gitignore)
+        self.assertEqual((copied / "README.md").read_text(encoding="utf-8"),
+                         (kit.ASSETS / "WORKSPACE.md").read_text(encoding="utf-8"))
+        self.assertEqual((research / "STATE.md").read_text(encoding="utf-8"), "started")
+        log = self.git(copied, "log", "-1", "--format=%s")
+        self.assertIn("kit history", log.stdout)
+        (copied / "README.md").write_text("custom", encoding="utf-8")
+        code, output = self.invoke("new-project", "--output", copied, "--adopt", "--reset-git")
+        self.assertEqual(code, 0, output)
+        self.assertEqual((copied / "README.md").read_text(encoding="utf-8"), "custom")
+        empty = subprocess.run(["git", "rev-parse", "HEAD"], cwd=copied, text=True, encoding="utf-8",
+                               errors="replace", capture_output=True, check=False)
+        self.assertNotEqual(empty.returncode, 0)
+
+    def test_adopt_refuses_to_reset_git_of_named_kit_without_force(self):
+        named = self.root / "repo-evaluation-kit"
+        shutil.copytree(kit.SKILL, named / ".agents" / "skills" / "repo-evaluation",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        self.git(named, "init")
+        marker = named / ".git" / "HEAD"
+        self.assertTrue(marker.is_file())
+        code, output = self.invoke("new-project", "--output", named, "--adopt", "--reset-git")
+        self.assertEqual(code, 1, output)
+        self.assertIn("--force", output)
+        self.assertTrue(marker.is_file())
+        code, output = self.invoke("new-project", "--output", named, "--adopt", "--reset-git", "--force")
+        self.assertEqual(code, 0, output)
+        empty = subprocess.run(["git", "rev-parse", "HEAD"], cwd=named, text=True, encoding="utf-8",
+                               errors="replace", capture_output=True, check=False)
+        self.assertNotEqual(empty.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
