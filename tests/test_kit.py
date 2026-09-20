@@ -441,6 +441,40 @@ class KitTests(unittest.TestCase):
                                errors="replace", capture_output=True, check=False)
         self.assertNotEqual(empty.returncode, 0)
 
+    def test_history_snapshot_stays_apart_from_active_pending_candidate(self):
+        inventory = self.init()
+        snapshot = self.run / "history" / "goal-v1"
+        snapshot.mkdir(parents=True)
+        for name in ["request.json", "INVENTORY.json", "EVIDENCE.json", *kit.DOCUMENTS]:
+            shutil.copy2(self.run / name, snapshot / name)
+        shutil.copytree(self.run / "reports", snapshot / "reports")
+        (snapshot / "REPORT.md").write_text("[stale](missing-old.md)\n", encoding="utf-8")
+        historical = copy.deepcopy(kit.read_json(snapshot / "INVENTORY.json"))
+        added = "https://github.com/fixture/added"
+        data = kit.read_json(self.run / "request.json")
+        data["repositories"].append(added)
+        kit.save_json(self.run / "request.json", data)
+        record = copy.deepcopy(inventory["repositories"][0])
+        record.update(id="r02", input_index=2, input_url=added, canonical_url=None,
+                      access="NOT_CHECKED", access_reason="fixture: added after goal change",
+                      default_branch=None, commit=None, commit_source=None, scope="PENDING",
+                      duplicate_of=None, report="reports/r02.md")
+        inventory["repositories"].append(record)
+        inventory["input_count"] = 2
+        kit.save_json(self.run / "INVENTORY.json", inventory)
+        (self.run / "reports" / "r02.md").write_text("# r02 fixture\n", encoding="utf-8")
+        (self.run / "GOAL-CHANGE.md").write_text("See [snapshot](history/goal-v1/STATE.md)\n", encoding="utf-8")
+        code, output = self.invoke("check-run", self.run)
+        self.assertEqual(code, 0, output)
+        self.assertEqual(kit.read_json(snapshot / "INVENTORY.json"), historical)
+        self.assertEqual((snapshot / "REPORT.md").read_text(encoding="utf-8"), "[stale](missing-old.md)\n")
+        current = kit.read_json(self.run / "INVENTORY.json")
+        self.assertEqual(current["repositories"][1]["access"], "NOT_CHECKED")
+        self.assertEqual(current["repositories"][1]["scope"], "PENDING")
+        self.assertIsNone(current["repositories"][1]["commit"])
+        (self.run / "REPORT.md").write_text("[broken](missing-now.md)\n", encoding="utf-8")
+        self.assertEqual(self.invoke("check-run", self.run)[0], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -472,7 +472,7 @@ def check_run(path):
     warnings = []
     repositories = check_inventory(root, request(root / "request.json"), read_json(root / "INVENTORY.json"), warnings)
     check_evidence(root, read_json(root / "EVIDENCE.json"), repositories, warnings)
-    check_links(root, markdown_files(root, {"sources", ".git", "cache", "__pycache__"}))
+    check_links(root, markdown_files(root, {"sources", ".git", "cache", "__pycache__", "history"}))
     print("PASS: structural consistency only; evidence truth and audit completion require review.")
     for warning in warnings:
         print(f"WARNING: {warning}")
