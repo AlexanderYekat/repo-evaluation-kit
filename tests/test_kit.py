@@ -448,7 +448,6 @@ class KitTests(unittest.TestCase):
         for name in ["request.json", "INVENTORY.json", "EVIDENCE.json", *kit.DOCUMENTS]:
             shutil.copy2(self.run / name, snapshot / name)
         shutil.copytree(self.run / "reports", snapshot / "reports")
-        (snapshot / "REPORT.md").write_text("[stale](missing-old.md)\n", encoding="utf-8")
         historical = copy.deepcopy(kit.read_json(snapshot / "INVENTORY.json"))
         added = "https://github.com/fixture/added"
         data = kit.read_json(self.run / "request.json")
@@ -467,12 +466,15 @@ class KitTests(unittest.TestCase):
         code, output = self.invoke("check-run", self.run)
         self.assertEqual(code, 0, output)
         self.assertEqual(kit.read_json(snapshot / "INVENTORY.json"), historical)
-        self.assertEqual((snapshot / "REPORT.md").read_text(encoding="utf-8"), "[stale](missing-old.md)\n")
         current = kit.read_json(self.run / "INVENTORY.json")
         self.assertEqual(current["repositories"][1]["access"], "NOT_CHECKED")
         self.assertEqual(current["repositories"][1]["scope"], "PENDING")
         self.assertIsNone(current["repositories"][1]["commit"])
+        active_report = (self.run / "REPORT.md").read_text(encoding="utf-8")
         (self.run / "REPORT.md").write_text("[broken](missing-now.md)\n", encoding="utf-8")
+        self.assertEqual(self.invoke("check-run", self.run)[0], 1)
+        (self.run / "REPORT.md").write_text(active_report, encoding="utf-8")
+        (snapshot / "REPORT.md").write_text("[stale](missing-old.md)\n", encoding="utf-8")
         self.assertEqual(self.invoke("check-run", self.run)[0], 1)
 
 
